@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Portfolio } from "./Portfolio"
 import { AssetList } from "./AssetList"
 import { TradeForm } from "./TradeForm"
@@ -18,7 +18,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export function PaperTradingSimulator() {
   const { marketData, marketEvents } = useMarketSimulation()
   const { portfolio, placeOrder, cancelOrder, addToWatchlist, removeFromWatchlist } = usePortfolio(1000000, marketData)
-  const [selectedAsset, setSelectedAsset] = useState(marketData[0].symbol)
+  const [selectedAsset, setSelectedAsset] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    if (marketData.length > 0 && !selectedAsset) {
+      setSelectedAsset(marketData[0].symbol)
+      setIsLoading(false)
+    }
+  }, [marketData, selectedAsset])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -41,7 +57,7 @@ export function PaperTradingSimulator() {
               <AssetList
                 assets={marketData}
                 onSelectAsset={setSelectedAsset}
-                selectedAsset={selectedAsset}
+                selectedAsset={selectedAsset!}
                 onAddToWatchlist={addToWatchlist}
               />
             </TabsContent>
@@ -52,13 +68,17 @@ export function PaperTradingSimulator() {
               <OrderBook orders={portfolio.orders} onCancelOrder={cancelOrder} />
             </TabsContent>
           </Tabs>
-          <PriceChart asset={marketData.find((a) => a.symbol === selectedAsset)!} />
-          <TradeForm
-            asset={marketData.find((a) => a.symbol === selectedAsset)!}
-            onPlaceOrder={placeOrder}
-            availableCash={portfolio.cash}
-            holdings={portfolio.holdings}
-          />
+          {selectedAsset && (
+            <>
+              <PriceChart asset={marketData.find((a) => a.symbol === selectedAsset)!} />
+              <TradeForm
+                asset={marketData.find((a) => a.symbol === selectedAsset)!}
+                onPlaceOrder={placeOrder}
+                availableCash={portfolio.cash}
+                holdings={portfolio.holdings}
+              />
+            </>
+          )}
         </div>
         <div className="space-y-4">
           <Watchlist
@@ -70,7 +90,7 @@ export function PaperTradingSimulator() {
             <MarketEvents events={marketEvents} />
             <NewsPanel events={marketEvents} />
           </div>
-          <AIAssistant portfolio={portfolio} marketData={marketData} selectedAsset={selectedAsset} />
+          {selectedAsset && <AIAssistant portfolio={portfolio} marketData={marketData} selectedAsset={selectedAsset} />}
         </div>
       </div>
       <TransactionHistory transactions={portfolio.transactions} />

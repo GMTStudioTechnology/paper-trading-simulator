@@ -47,14 +47,28 @@ interface Portfolio {
   watchlist: WatchlistItem[]
 }
 
+const PORTFOLIO_STORAGE_KEY = "paperTradingSimulatorPortfolio"
+
 export function usePortfolio(initialCash: number, marketData: Asset[]) {
-  const [portfolio, setPortfolio] = useState<Portfolio>({
-    cash: initialCash,
-    holdings: {},
-    orders: [],
-    transactions: [],
-    watchlist: [],
+  const [portfolio, setPortfolio] = useState<Portfolio>(() => {
+    if (typeof window !== "undefined") {
+      const savedPortfolio = localStorage.getItem(PORTFOLIO_STORAGE_KEY)
+      if (savedPortfolio) {
+        return JSON.parse(savedPortfolio)
+      }
+    }
+    return {
+      cash: initialCash,
+      holdings: {},
+      orders: [],
+      transactions: [],
+      watchlist: [],
+    }
   })
+
+  useEffect(() => {
+    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(portfolio))
+  }, [portfolio])
 
   const placeOrder = (
     asset: string,
@@ -177,7 +191,7 @@ export function usePortfolio(initialCash: number, marketData: Asset[]) {
         }
       }
     })
-  }, [marketData, portfolio.orders, executeOrder])
+  }, [marketData, portfolio.orders, executeOrder]) // Added executeOrder to dependencies
 
   return {
     portfolio,

@@ -14,7 +14,7 @@ const INITIAL_PRICES = {
   AAPL: 150,
   GOOGL: 100,
   MSFT: 100,
-  AMZN:100,
+  AMZN: 100,
   NVDA: 70,
   JPM: 50,
   BAC: 40,
@@ -130,9 +130,25 @@ function generateStockName(symbol: string): string {
   return words.join(" ") + " Inc."
 }
 
+const LOCAL_STORAGE_KEY = "paperTradingSimulator"
+
+const sectorVolatility: Record<keyof typeof SECTORS, number> = {
+  TECH: 0.03,
+  FINANCE: 0.02,
+  HEALTHCARE: 0.015,
+  ENERGY: 0.025,
+  CONSUMER: 0.01,
+}
+
 export function useMarketSimulation() {
-  const [marketData, setMarketData] = useState<Asset[]>(
-    Object.entries(INITIAL_PRICES).map(([symbol, price]) => ({
+  const [marketData, setMarketData] = useState<Asset[]>(() => {
+    if (typeof window !== "undefined") {
+      const savedData = localStorage.getItem(LOCAL_STORAGE_KEY)
+      if (savedData) {
+        return JSON.parse(savedData)
+      }
+    }
+    return Object.entries(INITIAL_PRICES).map(([symbol, price]) => ({
       symbol,
       name: generateStockName(symbol),
       sector: Object.entries(SECTORS).find(([, stocks]) => stocks.includes(symbol))![0],
@@ -140,22 +156,16 @@ export function useMarketSimulation() {
       previousPrice: price,
       dayChange: 0,
       dayChangePercentage: 0,
-    })),
-  )
+    }))
+  })
   const [marketEvents, setMarketEvents] = useState<MarketEvent[]>([])
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       setMarketData((prevData) => {
-        return prevData.map((asset) => {
-          const sectorVolatility = {
-            TECH: 0.03,
-            FINANCE: 0.02,
-            HEALTHCARE: 0.015,
-            ENERGY: 0.025,
-            CONSUMER: 0.01,
-          }[asset.sector as keyof typeof sectorVolatility]
-          const normalFluctuation = Math.random() * sectorVolatility * 2 - sectorVolatility
+        const newData = prevData.map((asset) => {
+          const volatility = sectorVolatility[asset.sector as keyof typeof SECTORS] || 0.02
+          const normalFluctuation = Math.random() * volatility * 2 - volatility
           let newPrice = asset.price * (1 + normalFluctuation)
 
           // 10% chance of a sector-wide event
@@ -195,6 +205,9 @@ export function useMarketSimulation() {
             dayChangePercentage,
           }
         })
+
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newData))
+        return newData
       })
     }, 3000)
 
