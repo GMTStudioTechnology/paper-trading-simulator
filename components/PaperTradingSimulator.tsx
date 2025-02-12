@@ -14,10 +14,14 @@ import { AIAssistant } from "./AIAssistant"
 import { useMarketSimulation } from "../hooks/useMarketSimulation"
 import { usePortfolio } from "../hooks/usePortfolio"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AccountManagement } from "./AccountManagement"
 
 export function PaperTradingSimulator() {
-  const { marketData, marketEvents } = useMarketSimulation()
-  const { portfolio, placeOrder, cancelOrder, addToWatchlist, removeFromWatchlist } = usePortfolio(1000000, marketData)
+  const { marketData, marketEvents, resetMarketData } = useMarketSimulation()
+  const { portfolio, placeOrder, cancelOrder, addToWatchlist, removeFromWatchlist, resetPortfolio } = usePortfolio(
+    1000000,
+    marketData,
+  )
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -34,6 +38,17 @@ export function PaperTradingSimulator() {
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
       </div>
     )
+  }
+
+  const handleDeleteAccount = () => {
+    resetPortfolio()
+    resetMarketData()
+    localStorage.clear()
+  }
+
+  const handleRestartGame = () => {
+    resetPortfolio()
+    resetMarketData()
   }
 
   return (
@@ -94,6 +109,7 @@ export function PaperTradingSimulator() {
         </div>
       </div>
       <TransactionHistory transactions={portfolio.transactions} />
+      <AccountManagement onDeleteAccount={handleDeleteAccount} onRestartGame={handleRestartGame} />
     </div>
   )
 }

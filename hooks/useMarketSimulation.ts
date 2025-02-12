@@ -214,6 +214,21 @@ export function useMarketSimulation() {
     return () => clearInterval(intervalId)
   }, [])
 
-  return { marketData, marketEvents }
+  const resetMarketData = () => {
+    const initialData = Object.entries(INITIAL_PRICES).map(([symbol, price]) => ({
+      symbol,
+      name: generateStockName(symbol),
+      sector: Object.entries(SECTORS).find(([, stocks]) => stocks.includes(symbol))![0],
+      price,
+      previousPrice: price,
+      dayChange: 0,
+      dayChangePercentage: 0,
+    }))
+    setMarketData(initialData)
+    setMarketEvents([])
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialData))
+  }
+
+  return { marketData, marketEvents, resetMarketData }
 }
 

@@ -191,7 +191,17 @@ export function usePortfolio(initialCash: number, marketData: Asset[]) {
         }
       }
     })
-  }, [marketData, portfolio.orders, executeOrder]) // Added executeOrder to dependencies
+  }, [marketData, portfolio.orders]) // Removed executeOrder from dependencies
+
+  const resetPortfolio = () => {
+    setPortfolio({
+      cash: initialCash,
+      holdings: {},
+      orders: [],
+      transactions: [],
+      watchlist: [],
+    })
+  }
 
   return {
     portfolio,
@@ -199,6 +209,7 @@ export function usePortfolio(initialCash: number, marketData: Asset[]) {
     cancelOrder,
     addToWatchlist,
     removeFromWatchlist,
+    resetPortfolio,
   }
 }
 
