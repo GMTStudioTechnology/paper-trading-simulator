@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, TrendingDown, TrendingUp } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { PlusCircle, TrendingDown, TrendingUp, Search } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface Asset {
@@ -22,16 +24,33 @@ interface AssetListProps {
 }
 
 export function AssetList({ assets, onSelectAsset, selectedAsset, onAddToWatchlist }: AssetListProps) {
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const filteredAssets = assets.filter(
+    (asset) =>
+      asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex-none">
         <CardTitle>Asset Prices</CardTitle>
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search assets..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
       </CardHeader>
       <CardContent className="flex-1 p-0 min-h-0">
         <ScrollArea className="h-full">
           <div className="px-4 pb-4">
             <div className="grid grid-cols-1 gap-2">
-              {assets.map((asset) => (
+              {filteredAssets.map((asset) => (
                 <div
                   key={asset.symbol}
                   onClick={() => onSelectAsset(asset.symbol)}

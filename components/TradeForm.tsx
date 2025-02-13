@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { toast } from "@/components/ui/use-toast"
+import { Slider } from "@/components/ui/slider"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Asset {
   symbol: string
@@ -42,6 +43,18 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
   const [limitPrice, setLimitPrice] = useState("")
   const [stopPrice, setStopPrice] = useState("")
   const [isAdvancedOrder, setIsAdvancedOrder] = useState(false)
+  const [percentOfCash, setPercentOfCash] = useState(0)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    if (action === "buy") {
+      const maxBuyQuantity = Math.floor(availableCash / asset.price)
+      setQuantity(Math.floor((maxBuyQuantity * percentOfCash) / 100).toString())
+    } else {
+      const maxSellQuantity = holdings[asset.symbol]?.quantity || 0
+      setQuantity(Math.floor((maxSellQuantity * percentOfCash) / 100).toString())
+    }
+  }, [percentOfCash, action, asset.price, availableCash, holdings, asset.symbol]) // Added asset.symbol to dependencies
 
   const handleTrade = () => {
     const quantityNum = Number(quantity)
@@ -108,6 +121,7 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
     setQuantity("")
     setLimitPrice("")
     setStopPrice("")
+    setPercentOfCash(0)
   }
 
   const maxBuyQuantity = Math.floor(availableCash / asset.price)
@@ -120,17 +134,48 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant={action === "buy" ? "default" : "outline"}
+              onClick={() => setAction("buy")}
+              className="flex-1"
+            >
+              Buy
+            </Button>
+            <Button
+              variant={action === "sell" ? "default" : "outline"}
+              onClick={() => setAction("sell")}
+              className="flex-1"
+            >
+              Sell
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <Label>Quantity ({action === "buy" ? "Max: " + maxBuyQuantity : "Max: " + maxSellQuantity})</Label>
             <Input
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder="Quantity"
+              placeholder="Enter quantity"
               min="1"
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Percentage of {action === "buy" ? "Cash" : "Holdings"}</Label>
+            <Slider value={[percentOfCash]} onValueChange={(value) => setPercentOfCash(value[0])} max={100} step={1} />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>0%</span>
+              <span>25%</span>
+              <span>50%</span>
+              <span>75%</span>
+              <span>100%</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Order Type</Label>
             <Select onValueChange={(value) => setOrderType(value as "market" | "limit" | "stop" | "stop-limit")}>
               <SelectTrigger>
-                <SelectValue placeholder="Order Type" />
+                <SelectValue placeholder="Select order type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="market">Market</SelectItem>
@@ -141,53 +186,39 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
             </Select>
           </div>
           {orderType !== "market" && (
-            <Input
-              type="number"
-              value={limitPrice}
-              onChange={(e) => setLimitPrice(e.target.value)}
-              placeholder="Limit Price"
-              min="0.01"
-              step="0.01"
-            />
+            <div className="space-y-2">
+              <Label>Limit Price</Label>
+              <Input
+                type="number"
+                value={limitPrice}
+                onChange={(e) => setLimitPrice(e.target.value)}
+                placeholder="Enter limit price"
+                min="0.01"
+                step="0.01"
+              />
+            </div>
           )}
           {(orderType === "stop" || orderType === "stop-limit") && (
-            <Input
-              type="number"
-              value={stopPrice}
-              onChange={(e) => setStopPrice(e.target.value)}
-              placeholder="Stop Price"
-              min="0.01"
-              step="0.01"
-            />
+            <div className="space-y-2">
+              <Label>Stop Price</Label>
+              <Input
+                type="number"
+                value={stopPrice}
+                onChange={(e) => setStopPrice(e.target.value)}
+                placeholder="Enter stop price"
+                min="0.01"
+                step="0.01"
+              />
+            </div>
           )}
           <div className="flex items-center space-x-2">
             <Switch id="advanced-order" checked={isAdvancedOrder} onCheckedChange={setIsAdvancedOrder} />
             <Label htmlFor="advanced-order">Advanced Order Options</Label>
           </div>
-          {isAdvancedOrder && (
-            <div className="space-y-2">
-              <Select onValueChange={(value) => setAction(value as "buy" | "sell")}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Action" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="buy">Buy</SelectItem>
-                  <SelectItem value="sell">Sell</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <Button
-              onClick={handleTrade}
-              disabled={Number(quantity) > (action === "buy" ? maxBuyQuantity : maxSellQuantity)}
-            >
-              Place Order
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Max Buy: {maxBuyQuantity} | Max Sell: {maxSellQuantity}
-          </p>
+          {isAdvancedOrder && <div className="space-y-2">{/* Add advanced order options here */}</div>}
+          <Button onClick={handleTrade} className="w-full">
+            Place {action.charAt(0).toUpperCase() + action.slice(1)} Order
+          </Button>
         </div>
       </CardContent>
     </Card>
