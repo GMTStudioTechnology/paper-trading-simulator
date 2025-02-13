@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { toast } from "@/components/ui/use-toast"
 
 interface Asset {
   symbol: string
@@ -45,17 +46,48 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
   const handleTrade = () => {
     const quantityNum = Number(quantity)
     if (isNaN(quantityNum) || quantityNum <= 0) {
-      alert("Please enter a valid quantity")
+      toast({
+        title: "Invalid quantity",
+        description: "Please enter a valid quantity",
+        variant: "destructive",
+      })
       return
     }
 
     if (orderType !== "market" && (isNaN(Number(limitPrice)) || Number(limitPrice) <= 0)) {
-      alert("Please enter a valid limit price")
+      toast({
+        title: "Invalid limit price",
+        description: "Please enter a valid limit price",
+        variant: "destructive",
+      })
       return
     }
 
     if ((orderType === "stop" || orderType === "stop-limit") && (isNaN(Number(stopPrice)) || Number(stopPrice) <= 0)) {
-      alert("Please enter a valid stop price")
+      toast({
+        title: "Invalid stop price",
+        description: "Please enter a valid stop price",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const totalCost = quantityNum * asset.price
+    if (action === "buy" && totalCost > availableCash) {
+      toast({
+        title: "Insufficient funds",
+        description: "You don't have enough cash to place this order",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (action === "sell" && quantityNum > (holdings[asset.symbol]?.quantity || 0)) {
+      toast({
+        title: "Insufficient holdings",
+        description: "You don't have enough shares to sell",
+        variant: "destructive",
+      })
       return
     }
 
@@ -67,6 +99,12 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
       orderType !== "market" ? Number(limitPrice) : undefined,
       orderType === "stop" || orderType === "stop-limit" ? Number(stopPrice) : undefined,
     )
+
+    toast({
+      title: "Order placed",
+      description: `Successfully placed a ${action} order for ${quantityNum} shares of ${asset.symbol}`,
+    })
+
     setQuantity("")
     setLimitPrice("")
     setStopPrice("")

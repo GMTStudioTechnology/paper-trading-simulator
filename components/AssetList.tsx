@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, TrendingDown, TrendingUp } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface Asset {
   symbol: string
@@ -22,51 +23,57 @@ interface AssetListProps {
 
 export function AssetList({ assets, onSelectAsset, selectedAsset, onAddToWatchlist }: AssetListProps) {
   return (
-    <Card>
-      <CardHeader>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex-none">
         <CardTitle>Asset Prices</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {assets.map((asset) => (
-            <div
-              key={asset.symbol}
-              onClick={() => onSelectAsset(asset.symbol)}
-              className={`flex justify-between items-center p-3 rounded-lg cursor-pointer transition-colors duration-200 ${
-                asset.symbol === selectedAsset ? "bg-primary text-primary-foreground" : "bg-card hover:bg-secondary"
-              }`}
-            >
-              <div className="flex flex-col">
-                <span className="font-semibold">{asset.symbol}</span>
-                <span className="text-xs text-muted-foreground truncate max-w-[120px]">{asset.name}</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="font-medium">${asset.price.toFixed(2)}</span>
-                <span
-                  className={`text-xs flex items-center ${asset.dayChange >= 0 ? "text-green-500" : "text-red-500"}`}
+      <CardContent className="flex-1 p-0 min-h-0">
+        <ScrollArea className="h-full">
+          <div className="px-4 pb-4">
+            <div className="grid grid-cols-1 gap-2">
+              {assets.map((asset) => (
+                <div
+                  key={asset.symbol}
+                  onClick={() => onSelectAsset(asset.symbol)}
+                  className={`flex justify-between items-center p-3 rounded-lg cursor-pointer transition-colors duration-200 ${
+                    asset.symbol === selectedAsset ? "bg-primary text-primary-foreground" : "bg-card hover:bg-secondary"
+                  }`}
                 >
-                  {asset.dayChange >= 0 ? (
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 mr-1" />
-                  )}
-                  {asset.dayChangePercentage.toFixed(2)}%
-                </span>
-              </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onAddToWatchlist(asset.symbol)
-                }}
-                className="ml-2"
-              >
-                <PlusCircle className="h-4 w-4" />
-              </Button>
+                  <div className="flex flex-col">
+                    <span className="font-semibold">{asset.symbol}</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[120px]">{asset.name}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="font-medium">${asset.price.toFixed(2)}</span>
+                    <span
+                      className={`text-xs flex items-center ${
+                        asset.dayChange >= 0 ? "text-green-500" : "text-red-500"
+                      }`}
+                    >
+                      {asset.dayChange >= 0 ? (
+                        <TrendingUp className="w-3 h-3 mr-1" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3 mr-1" />
+                      )}
+                      {asset.dayChangePercentage.toFixed(2)}%
+                    </span>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAddToWatchlist(asset.symbol)
+                    }}
+                    className="ml-2"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   )
