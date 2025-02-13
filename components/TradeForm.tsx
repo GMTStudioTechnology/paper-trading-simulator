@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 interface Asset {
   symbol: string
@@ -22,10 +24,11 @@ interface TradeFormProps {
   asset: Asset
   onPlaceOrder: (
     asset: string,
-    type: "market" | "limit" | "stop",
+    type: "market" | "limit" | "stop" | "stop-limit",
     action: "buy" | "sell",
     quantity: number,
     price?: number,
+    stopPrice?: number,
   ) => void
   availableCash: number
   holdings: Holdings
@@ -33,10 +36,13 @@ interface TradeFormProps {
 
 export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: TradeFormProps) {
   const [quantity, setQuantity] = useState("")
-  const [orderType, setOrderType] = useState<"market" | "limit" | "stop">("market")
+  const [orderType, setOrderType] = useState<"market" | "limit" | "stop" | "stop-limit">("market")
+  const [action, setAction] = useState<"buy" | "sell">("buy")
   const [limitPrice, setLimitPrice] = useState("")
+  const [stopPrice, setStopPrice] = useState("")
+  const [isAdvancedOrder, setIsAdvancedOrder] = useState(false)
 
-  const handleTrade = (action: "buy" | "sell") => {
+  const handleTrade = () => {
     const quantityNum = Number(quantity)
     if (isNaN(quantityNum) || quantityNum <= 0) {
       alert("Please enter a valid quantity")
@@ -48,9 +54,22 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
       return
     }
 
-    onPlaceOrder(asset.symbol, orderType, action, quantityNum, orderType !== "market" ? Number(limitPrice) : undefined)
+    if ((orderType === "stop" || orderType === "stop-limit") && (isNaN(Number(stopPrice)) || Number(stopPrice) <= 0)) {
+      alert("Please enter a valid stop price")
+      return
+    }
+
+    onPlaceOrder(
+      asset.symbol,
+      orderType,
+      action,
+      quantityNum,
+      orderType !== "market" ? Number(limitPrice) : undefined,
+      orderType === "stop" || orderType === "stop-limit" ? Number(stopPrice) : undefined,
+    )
     setQuantity("")
     setLimitPrice("")
+    setStopPrice("")
   }
 
   const maxBuyQuantity = Math.floor(availableCash / asset.price)
@@ -71,7 +90,7 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
               placeholder="Quantity"
               min="1"
             />
-            <Select onValueChange={(value) => setOrderType(value as "market" | "limit" | "stop")}>
+            <Select onValueChange={(value) => setOrderType(value as "market" | "limit" | "stop" | "stop-limit")}>
               <SelectTrigger>
                 <SelectValue placeholder="Order Type" />
               </SelectTrigger>
@@ -79,6 +98,7 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
                 <SelectItem value="market">Market</SelectItem>
                 <SelectItem value="limit">Limit</SelectItem>
                 <SelectItem value="stop">Stop</SelectItem>
+                <SelectItem value="stop-limit">Stop Limit</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -87,21 +107,44 @@ export function TradeForm({ asset, onPlaceOrder, availableCash, holdings }: Trad
               type="number"
               value={limitPrice}
               onChange={(e) => setLimitPrice(e.target.value)}
-              placeholder={`${orderType.charAt(0).toUpperCase() + orderType.slice(1)} Price`}
+              placeholder="Limit Price"
               min="0.01"
               step="0.01"
             />
           )}
+          {(orderType === "stop" || orderType === "stop-limit") && (
+            <Input
+              type="number"
+              value={stopPrice}
+              onChange={(e) => setStopPrice(e.target.value)}
+              placeholder="Stop Price"
+              min="0.01"
+              step="0.01"
+            />
+          )}
+          <div className="flex items-center space-x-2">
+            <Switch id="advanced-order" checked={isAdvancedOrder} onCheckedChange={setIsAdvancedOrder} />
+            <Label htmlFor="advanced-order">Advanced Order Options</Label>
+          </div>
+          {isAdvancedOrder && (
+            <div className="space-y-2">
+              <Select onValueChange={(value) => setAction(value as "buy" | "sell")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="buy">Buy</SelectItem>
+                  <SelectItem value="sell">Sell</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex justify-between">
-            <Button onClick={() => handleTrade("buy")} disabled={Number(quantity) > maxBuyQuantity}>
-              Buy
-            </Button>
             <Button
-              onClick={() => handleTrade("sell")}
-              variant="secondary"
-              disabled={Number(quantity) > maxSellQuantity}
+              onClick={handleTrade}
+              disabled={Number(quantity) > (action === "buy" ? maxBuyQuantity : maxSellQuantity)}
             >
-              Sell
+              Place Order
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">

@@ -17,10 +17,11 @@ interface Holdings {
 interface Order {
   id: string
   asset: string
-  type: "market" | "limit" | "stop"
+  type: "market" | "limit" | "stop" | "stop-limit"
   action: "buy" | "sell"
   quantity: number
   price: number
+  stopPrice: number
   status: "pending" | "executed" | "cancelled"
   timestamp: Date
 }
@@ -72,10 +73,11 @@ export function usePortfolio(initialCash: number, marketData: Asset[]) {
 
   const placeOrder = (
     asset: string,
-    type: "market" | "limit" | "stop",
+    type: "market" | "limit" | "stop" | "stop-limit",
     action: "buy" | "sell",
     quantity: number,
     price?: number,
+    stopPrice?: number,
   ) => {
     const order: Order = {
       id: Math.random().toString(36).substr(2, 9),
@@ -84,6 +86,7 @@ export function usePortfolio(initialCash: number, marketData: Asset[]) {
       action,
       quantity,
       price: price || 0,
+      stopPrice: stopPrice || 0,
       status: type === "market" ? "executed" : "pending",
       timestamp: new Date(),
     }
@@ -184,14 +187,22 @@ export function usePortfolio(initialCash: number, marketData: Asset[]) {
             (order.type === "limit" && order.action === "buy" && assetData.price <= order.price) ||
             (order.type === "limit" && order.action === "sell" && assetData.price >= order.price) ||
             (order.type === "stop" && order.action === "sell" && assetData.price <= order.price) ||
-            (order.type === "stop" && order.action === "buy" && assetData.price >= order.price)
+            (order.type === "stop" && order.action === "buy" && assetData.price >= order.price) ||
+            (order.type === "stop-limit" &&
+              order.action === "buy" &&
+              assetData.price >= order.stopPrice &&
+              assetData.price <= order.price) ||
+            (order.type === "stop-limit" &&
+              order.action === "sell" &&
+              assetData.price <= order.stopPrice &&
+              assetData.price >= order.price)
           ) {
             executeOrder(order)
           }
         }
       }
     })
-  }, [marketData, portfolio.orders]) // Removed executeOrder from dependencies
+  }, [marketData, portfolio.orders, executeOrder]) // Added executeOrder to dependencies
 
   const resetPortfolio = () => {
     setPortfolio({
