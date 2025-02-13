@@ -14,10 +14,10 @@ interface Trader {
 }
 
 const mockTraders: Trader[] = [
-  { id: "1", name: "Alice Johnson", avatar: "/avatars/alice.jpg", performance: 15.2, followers: 1200 },
-  { id: "2", name: "Bob Smith", avatar: "/avatars/bob.jpg", performance: 12.8, followers: 980 },
-  { id: "3", name: "Charlie Brown", avatar: "/avatars/charlie.jpg", performance: 18.5, followers: 1500 },
-  { id: "4", name: "Diana Ross", avatar: "/avatars/diana.jpg", performance: 10.1, followers: 750 },
+  { id: "1", name: "GMTStudio", avatar: "/avatars/GMTStudio.jpg", performance: 15.2, followers: 1200 },
+  { id: "2", name: "Unknown", avatar: "/avatars/bob.jpg", performance: 12.8, followers: 980 },
+  { id: "3", name: "Unknown", avatar: "/avatars/charlie.jpg", performance: 18.5, followers: 1500 },
+  { id: "4", name: "Unknown", avatar: "/avatars/diana.jpg", performance: 10.1, followers: 750 },
 ]
 
 export function SocialTrading() {
